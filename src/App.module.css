@@ -7,7 +7,6 @@
 .box {
   width: 114.3px;
   height: 177.8px;
-  margin-top: -145px;
   border-radius: 8px;
   box-shadow: 0 0 0 1px #000 inset;
 }
@@ -36,8 +35,6 @@ div:focus {
   height: 177.8px;
   cursor: default;
   border-radius: 8px;
-}
-
-.slot ~ div > .box {
-  margin-top: -177.8px;
+  /* transform: translateY(32.8px); */
+  /* INTRODUCES A BUG SINCE THE BOX PRE-TRANSLATION IS TAKEN FOR DROPS */
 }

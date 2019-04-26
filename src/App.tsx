@@ -9,6 +9,8 @@ import React, {
 } from 'react'
 import styles from './App.module.css'
 
+const ANIMATION_TIME = 250
+
 type ID = string
 
 type Point = {
@@ -73,6 +75,14 @@ const indexToColor = (i: number) => {
   return `rgb(${value / 2}, 0, ${value})`
 }
 
+const animate = (from: Point, to: Point) => [
+  [{ transform: translate(from) }, { transform: translate(to) }],
+  {
+    duration: ANIMATION_TIME,
+    easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
+  },
+]
+
 type DragProps = {
   cardId: ID
   children: ReactNode
@@ -85,8 +95,8 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
 
   useEffect(() => {
     let pressed = false
-    let pressPoint = { x: 0, y: 0 }
-    let position = { x: 0, y: 0 }
+    let pressPoint = { x: 0, y: -145 }
+    let position = { x: 0, y: -145 }
 
     const callbacks = [
       {
@@ -95,7 +105,6 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
           if ((event.target as HTMLElement).parentNode !== ref.current) {
             return
           }
-          console.log('down')
           pressed = true
           ref.current!.style.cursor = 'grabbing'
           pressPoint = { x: event.pageX, y: event.pageY }
@@ -105,25 +114,38 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
         key: 'mouseup',
         fn: (event: MouseEvent<HTMLElement>) => {
           if (!pressed) return
-          console.log('up')
           pressed = false
-          ref.current!.animate(
-            [
-              { transform: translate(position) },
-              { transform: translate({ x: 0, y: 0 }) },
-            ],
-            {
-              duration: 250,
-              easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
-            }
-          )
-          ref.current!.style.cursor = 'grab'
-          ref.current!.style.transform = translate({ x: 0, y: 0 })
-          pressPoint = { x: 0, y: 0 }
-          position = { x: 0, y: 0 }
 
           const isInside = inside({ x: event.pageX, y: event.pageY }, draggable)
-          if (isInside) onDrop(isInside.stackId, cardId)
+          if (isInside) {
+            onDrop(isInside.stackId, cardId)
+            // console.log({ x: isInside.left, y: isInside.top })
+            // ref.current!.animate(
+            //   // @ts-ignore
+            //   ...animate(position, {
+            //     x: isInside.left,
+            //     y: isInside.top - 100 + 32.8,
+            //   })
+            // )
+            // TODO:
+            // animate cards moving there
+            // TODO2:
+            // If cursor is moved outside of the screen, the stack sometimes stops
+            // TODO3:
+            // animate cards moving one by one
+            // setTimeout(
+            //   () => onDrop(isInside.stackId, cardId),
+            //   2 * ANIMATION_TIME
+            // )
+          } else {
+            // @ts-ignore
+            ref.current!.animate(...animate(position, { x: 0, y: -145 }))
+
+            ref.current!.style.cursor = 'grab'
+            ref.current!.style.transform = translate({ x: 0, y: -145 })
+            pressPoint = { x: 0, y: -145 }
+            position = { x: 0, y: -145 }
+          }
         },
       },
       {
@@ -132,7 +154,7 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
           if (!pressed) return
           position = {
             x: event.pageX - pressPoint.x,
-            y: event.pageY - pressPoint.y,
+            y: event.pageY - pressPoint.y - 145,
           }
           ref.current!.style.transform = translate(position)
         },
@@ -149,10 +171,13 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
         window.removeEventListener(callback.key, callback.fn)
       })
     }
-  }, [draggable])
+  }, [draggable, cardId, onDrop])
 
   return (
-    <div style={{ cursor: 'grab' }} ref={ref}>
+    <div
+      style={{ cursor: 'grab', transform: 'translate(0, -145px)' }}
+      ref={ref}
+    >
       {children}
     </div>
   )
@@ -175,6 +200,8 @@ const Drop = ({ stackId }: DropProps) => {
   useEffect(() => {
     const { left, top, width, height } = ref.current!.getBoundingClientRect()
     draggable.push({ stackId, left, top, width, height })
+
+    // TODO: they are not removed on unmount
   })
 
   return <div className={styles.drop} ref={ref} />
@@ -259,7 +286,13 @@ const initial: State = {
 }
 
 export default () => {
-  const droppables: any = defaultContext
+  // It's important to use spread here so the context will be recreated on each
+  // render. That way there is no need to change droppables, since every change
+  // to them will happen only during rerender reaching *this* code.
+  const droppables: Array<{ stackId: string } & Dimensions> = [
+    ...defaultContext,
+  ]
+
   const [state, dispatch] = useReducer(reducer, { ...initial })
 
   const handleDrop = (stackId: ID, cardId: ID) =>
