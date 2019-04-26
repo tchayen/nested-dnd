@@ -1,0 +1,32 @@
+.app {
+  margin: 100px;
+  position: relative;
+  display: flex;
+}
+
+.box {
+  width: 114.3px;
+  height: 177.8px;
+  margin-top: -130px;
+  border-radius: 8px;
+  box-shadow: 0 0 0 1px #000 inset;
+}
+
+div:focus {
+  z-index: 10;
+  outline: 0;
+}
+
+.slot {
+  background-color: rgba(0, 0, 0, 0.3);
+  left: 0px;
+  top: 0px;
+  width: 114.3px;
+  height: 177.8px;
+  cursor: default;
+  border-radius: 8px;
+}
+
+.slot ~ div > .box {
+  margin-top: -177.8px;
+}
