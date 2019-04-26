@@ -24,6 +24,10 @@ div:focus {
   outline: 0;
 }
 
+.stack {
+  margin-right: 50px;
+}
+
 .slot {
   background-color: rgba(0, 0, 0, 0.3);
   left: 0px;

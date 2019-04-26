@@ -1,5 +1,6 @@
 import React, {
   useRef,
+  useReducer,
   useEffect,
   MouseEvent,
   ReactNode,
@@ -7,6 +8,8 @@ import React, {
   useContext,
 } from 'react'
 import styles from './App.module.css'
+
+type ID = string
 
 type Point = {
   x: number
@@ -20,6 +23,23 @@ type Dimensions = {
   height: number
 }
 
+type DropCallback = (dimensions: Dimensions | undefined) => void
+
+type Card = {
+  id: string
+  color: string
+}
+
+type CardStack = Array<Card>
+
+type State = {
+  stacks: Array<CardStack>
+}
+
+type Action = {
+  type: string
+}
+
 type BoxProps = {
   color: string
 }
@@ -30,14 +50,19 @@ const Box = ({ color }: BoxProps) => (
 
 const translate = (p: Point) => `translate(${p.x}px, ${p.y}px)`
 
-const inside = (p: Point, array: Array<Dimensions>) =>
-  array.some(
-    d =>
+const inside = (p: Point, array: Array<Dimensions>) => {
+  for (let i = 0; i < array.length; i++) {
+    const d = array[i]
+    if (
       p.x >= d.left &&
       p.x <= d.left + d.width &&
       p.y >= d.top &&
       p.y <= d.top + d.height
-  )
+    ) {
+      return d
+    }
+  }
+}
 
 const length = 7
 const maxRgb = 255
@@ -49,9 +74,10 @@ const indexToColor = (i: number) => {
 
 type DragProps = {
   children: ReactNode
+  onDrop: DropCallback
 }
 
-const Drag = ({ children }: DragProps) => {
+const Drag = ({ children, onDrop }: DragProps) => {
   const draggable = useContext(DragContext)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -94,7 +120,7 @@ const Drag = ({ children }: DragProps) => {
           pressPoint = { x: 0, y: 0 }
           position = { x: 0, y: 0 }
 
-          console.log(inside({ x: event.pageX, y: event.pageY }, draggable))
+          onDrop(inside({ x: event.pageX, y: event.pageY }, draggable))
         },
       },
       {
@@ -147,32 +173,68 @@ const Drop = () => {
 
 const Slot = () => <div className={styles.slot} />
 
-const Stack = ({ colors }: any) => {
-  if (colors.length === 0) return <Drop />
-  const [color, ...rest] = colors
+type StackProps = {
+  cards: Array<Card>
+  onDrop: (id: ID) => DropCallback
+}
+
+const Stack = ({ cards, onDrop }: StackProps) => {
+  if (cards.length === 0) return <Drop />
+  const [card, ...rest] = cards
+
+  console.log('Stack:onDrop', onDrop)
 
   return (
-    <Drag>
-      <Box color={color} />
-      <Stack colors={rest} />
+    <Drag onDrop={onDrop(card.id)}>
+      <Box color={card.color} />
+      <Stack cards={rest} onDrop={onDrop} />
     </Drag>
   )
 }
 
+const oneOf = (array: Array<any>) =>
+  array[Math.round(Math.random() * (array.length - 1))]
+
+const friends = ['bro', 'pal', 'mate', 'fella', 'buddy', 'dude']
+
+const reducer = (state: State, action: Action) => {
+  switch (action.type) {
+    case 'sth':
+      return { ...state }
+    default:
+      throw new Error(`Unrecognized action type, ${oneOf(friends)}`)
+  }
+}
+
+const colors = [...Array(length)].map((_, index) => index).map(indexToColor)
+
+let id = 0
+const makeCard = (color: string) => {
+  id = id + 1
+  return { id: `${id}`, color }
+}
+
+const initial: State = {
+  stacks: [[...colors].map(makeCard), [...colors].map(makeCard)],
+}
+
 export default () => {
-  const colors = [...Array(length)].map((_, index) => index).map(indexToColor)
   const droppables: any = defaultContext
+  const [state, dispatch] = useReducer(reducer, { ...initial })
+
+  const handleDrop = (id: ID) => () => {
+    console.log(id, '!!')
+  }
+
   return (
     <div className={styles.app}>
       <DragContext.Provider value={droppables}>
-        <div tabIndex={-1} style={{ position: 'absolute', left: 0, top: 0 }}>
-          <Slot />
-          <Stack colors={colors} offset={0} />
-        </div>
-        <div tabIndex={-1} style={{ position: 'absolute', left: 200, top: 0 }}>
-          <Slot />
-          <Stack colors={colors} offset={0} />
-        </div>
+        {state.stacks.map((stack, index) => (
+          <div key={index} className={styles.stack} tabIndex={-1}>
+            <Slot />
+            <Stack cards={stack} onDrop={handleDrop} />
+          </div>
+        ))}
       </DragContext.Provider>
     </div>
   )
