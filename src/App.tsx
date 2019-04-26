@@ -1,9 +1,12 @@
 import React, {
-  useState,
   useRef,
   useEffect,
   MouseEvent,
   ReactNode,
+  createContext,
+  Context,
+  ComponentType,
+  useContext,
 } from 'react'
 import styles from './App.module.css'
 
@@ -24,12 +27,7 @@ type BoxProps = {
 }
 
 const Box = ({ color }: BoxProps) => (
-  <div
-    className={styles.box}
-    style={{
-      backgroundColor: color,
-    }}
-  />
+  <div className={styles.box} style={{ backgroundColor: color }} />
 )
 
 const translate = (p: Point) => `translate(${p.x}px, ${p.y}px)`
@@ -43,20 +41,20 @@ const inside = (p: Point, array: Array<Dimensions>) =>
       p.y <= d.top + d.height
   )
 
-const length = 6
+const length = 7
 const maxRgb = 255
 
 const indexToColor = (i: number) => {
   const value = (maxRgb / length) * i
-  return `rgb(${value}, 0, ${value})`
+  return `rgb(${value / 2}, 0, ${value})`
 }
 
 type DragProps = {
   children: ReactNode
-  idn: number
 }
 
-const Drag = ({ children, idn }: DragProps) => {
+const Drag = ({ children }: DragProps) => {
+  const draggable = useContext(DragContext)
   const ref = useRef<HTMLDivElement>(null)
   let pressed = false
   let pressPoint = { x: 0, y: 0 }
@@ -69,7 +67,7 @@ const Drag = ({ children, idn }: DragProps) => {
         if ((event.target as HTMLElement).parentNode !== ref.current) {
           return
         }
-        console.log(`${idn}: down`)
+        console.log('down')
         pressed = true
         ref.current!.style.cursor = 'grabbing'
         pressPoint = { x: event.pageX, y: event.pageY }
@@ -79,7 +77,7 @@ const Drag = ({ children, idn }: DragProps) => {
       key: 'mouseup',
       fn: (event: MouseEvent<HTMLElement>) => {
         if (!pressed) return
-        console.log(`${idn}: up`)
+        console.log('up')
         pressed = false
         ref.current!.animate(
           [
@@ -96,7 +94,7 @@ const Drag = ({ children, idn }: DragProps) => {
         pressPoint = { x: 0, y: 0 }
         position = { x: 0, y: 0 }
 
-        console.log(inside({ x: event.pageX, y: event.pageY }, []))
+        console.log(inside({ x: event.pageX, y: event.pageY }, draggable))
       },
     },
     {
@@ -132,7 +130,21 @@ const Drag = ({ children, idn }: DragProps) => {
   )
 }
 
-const Drop = () => <div style={{ width: '100%', height: '100%' }}>drop!</div>
+const defaultContext: any = [123]
+
+const DragContext = createContext<Array<any>>(defaultContext)
+
+const Drop = () => {
+  const draggable = useContext(DragContext)
+  const ref = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const { left, top, width, height } = ref.current!.getBoundingClientRect()
+    draggable.push({ ref, left, top, width, height })
+  })
+
+  return <div className={styles.drop} ref={ref} />
+}
 
 const Slot = () => <div className={styles.slot} />
 
@@ -141,7 +153,7 @@ const Stack = ({ colors }: any) => {
   const [color, ...rest] = colors
 
   return (
-    <Drag idn={0}>
+    <Drag>
       <Box color={color} />
       <Stack colors={rest} />
     </Drag>
@@ -150,17 +162,19 @@ const Stack = ({ colors }: any) => {
 
 export default () => {
   const colors = [...Array(length)].map((_, index) => index).map(indexToColor)
-
+  const droppables: any = defaultContext
   return (
     <div className={styles.app}>
-      <div tabIndex={-1} style={{ position: 'absolute', left: 0, top: 0 }}>
-        <Slot />
-        <Stack colors={colors} offset={0} />
-      </div>
-      <div tabIndex={-1} style={{ position: 'absolute', left: 200, top: 0 }}>
-        <Slot />
-        <Stack colors={colors} offset={0} />
-      </div>
+      <DragContext.Provider value={droppables}>
+        <div tabIndex={-1} style={{ position: 'absolute', left: 0, top: 0 }}>
+          <Slot />
+          <Stack colors={colors} offset={0} />
+        </div>
+        <div tabIndex={-1} style={{ position: 'absolute', left: 200, top: 0 }}>
+          <Slot />
+          <Stack colors={colors} offset={0} />
+        </div>
+      </DragContext.Provider>
     </div>
   )
 }
