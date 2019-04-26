@@ -4,8 +4,6 @@ import React, {
   MouseEvent,
   ReactNode,
   createContext,
-  Context,
-  ComponentType,
   useContext,
 } from 'react'
 import styles from './App.module.css'
@@ -56,61 +54,62 @@ type DragProps = {
 const Drag = ({ children }: DragProps) => {
   const draggable = useContext(DragContext)
   const ref = useRef<HTMLDivElement>(null)
-  let pressed = false
-  let pressPoint = { x: 0, y: 0 }
-  let position = { x: 0, y: 0 }
-
-  const callbacks = [
-    {
-      key: 'mousedown',
-      fn: (event: MouseEvent<HTMLElement>) => {
-        if ((event.target as HTMLElement).parentNode !== ref.current) {
-          return
-        }
-        console.log('down')
-        pressed = true
-        ref.current!.style.cursor = 'grabbing'
-        pressPoint = { x: event.pageX, y: event.pageY }
-      },
-    },
-    {
-      key: 'mouseup',
-      fn: (event: MouseEvent<HTMLElement>) => {
-        if (!pressed) return
-        console.log('up')
-        pressed = false
-        ref.current!.animate(
-          [
-            { transform: translate(position) },
-            { transform: translate({ x: 0, y: 0 }) },
-          ],
-          {
-            duration: 250,
-            easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
-          }
-        )
-        ref.current!.style.cursor = 'grab'
-        ref.current!.style.transform = translate({ x: 0, y: 0 })
-        pressPoint = { x: 0, y: 0 }
-        position = { x: 0, y: 0 }
-
-        console.log(inside({ x: event.pageX, y: event.pageY }, draggable))
-      },
-    },
-    {
-      key: 'mousemove',
-      fn: (event: MouseEvent<HTMLElement>) => {
-        if (!pressed) return
-        position = {
-          x: event.pageX - pressPoint.x,
-          y: event.pageY - pressPoint.y,
-        }
-        ref.current!.style.transform = translate(position)
-      },
-    },
-  ]
 
   useEffect(() => {
+    let pressed = false
+    let pressPoint = { x: 0, y: 0 }
+    let position = { x: 0, y: 0 }
+
+    const callbacks = [
+      {
+        key: 'mousedown',
+        fn: (event: MouseEvent<HTMLElement>) => {
+          if ((event.target as HTMLElement).parentNode !== ref.current) {
+            return
+          }
+          console.log('down')
+          pressed = true
+          ref.current!.style.cursor = 'grabbing'
+          pressPoint = { x: event.pageX, y: event.pageY }
+        },
+      },
+      {
+        key: 'mouseup',
+        fn: (event: MouseEvent<HTMLElement>) => {
+          if (!pressed) return
+          console.log('up')
+          pressed = false
+          ref.current!.animate(
+            [
+              { transform: translate(position) },
+              { transform: translate({ x: 0, y: 0 }) },
+            ],
+            {
+              duration: 250,
+              easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
+            }
+          )
+          ref.current!.style.cursor = 'grab'
+          ref.current!.style.transform = translate({ x: 0, y: 0 })
+          pressPoint = { x: 0, y: 0 }
+          position = { x: 0, y: 0 }
+
+          console.log(inside({ x: event.pageX, y: event.pageY }, draggable))
+        },
+      },
+      {
+        key: 'mousemove',
+        fn: (event: MouseEvent<HTMLElement>) => {
+          if (!pressed) return
+          position = {
+            x: event.pageX - pressPoint.x,
+            y: event.pageY - pressPoint.y,
+          }
+          ref.current!.style.transform = translate(position)
+        },
+      },
+    ]
+
     callbacks.forEach(callback => {
       // @ts-ignore
       window.addEventListener(callback.key, callback.fn)
@@ -121,7 +120,7 @@ const Drag = ({ children }: DragProps) => {
         window.removeEventListener(callback.key, callback.fn)
       })
     }
-  }, [])
+  }, [draggable])
 
   return (
     <div style={{ cursor: 'grab' }} ref={ref}>
@@ -130,7 +129,7 @@ const Drag = ({ children }: DragProps) => {
   )
 }
 
-const defaultContext: any = [123]
+const defaultContext: any = []
 
 const DragContext = createContext<Array<any>>(defaultContext)
 
