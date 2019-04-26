@@ -23,22 +23,23 @@ type Dimensions = {
   height: number
 }
 
-type DropCallback = (dimensions: Dimensions | undefined) => void
+type DropCallback = (stackId: ID, cardId: ID) => void
 
 type Card = {
   id: string
   color: string
 }
 
-type CardStack = Array<Card>
+type CardStack = {
+  id: ID
+  cards: Array<Card>
+}
 
 type State = {
   stacks: Array<CardStack>
 }
 
-type Action = {
-  type: string
-}
+type Action = { type: 'drop'; stackId: ID; cardId: ID }
 
 type BoxProps = {
   color: string
@@ -50,7 +51,7 @@ const Box = ({ color }: BoxProps) => (
 
 const translate = (p: Point) => `translate(${p.x}px, ${p.y}px)`
 
-const inside = (p: Point, array: Array<Dimensions>) => {
+const inside = (p: Point, array: Array<{ stackId: ID } & Dimensions>) => {
   for (let i = 0; i < array.length; i++) {
     const d = array[i]
     if (
@@ -73,11 +74,12 @@ const indexToColor = (i: number) => {
 }
 
 type DragProps = {
+  cardId: ID
   children: ReactNode
   onDrop: DropCallback
 }
 
-const Drag = ({ children, onDrop }: DragProps) => {
+const Drag = ({ children, cardId, onDrop }: DragProps) => {
   const draggable = useContext(DragContext)
   const ref = useRef<HTMLDivElement>(null)
 
@@ -120,7 +122,8 @@ const Drag = ({ children, onDrop }: DragProps) => {
           pressPoint = { x: 0, y: 0 }
           position = { x: 0, y: 0 }
 
-          onDrop(inside({ x: event.pageX, y: event.pageY }, draggable))
+          const isInside = inside({ x: event.pageX, y: event.pageY }, draggable)
+          if (isInside) onDrop(isInside.stackId, cardId)
         },
       },
       {
@@ -157,15 +160,21 @@ const Drag = ({ children, onDrop }: DragProps) => {
 
 const defaultContext: any = []
 
-const DragContext = createContext<Array<any>>(defaultContext)
+const DragContext = createContext<Array<{ stackId: ID } & Dimensions>>(
+  defaultContext
+)
 
-const Drop = () => {
+type DropProps = {
+  stackId: ID
+}
+
+const Drop = ({ stackId }: DropProps) => {
   const draggable = useContext(DragContext)
   const ref = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const { left, top, width, height } = ref.current!.getBoundingClientRect()
-    draggable.push({ ref, left, top, width, height })
+    draggable.push({ stackId, left, top, width, height })
   })
 
   return <div className={styles.drop} ref={ref} />
@@ -174,20 +183,19 @@ const Drop = () => {
 const Slot = () => <div className={styles.slot} />
 
 type StackProps = {
+  id: ID
   cards: Array<Card>
-  onDrop: (id: ID) => DropCallback
+  onDrop: DropCallback
 }
 
-const Stack = ({ cards, onDrop }: StackProps) => {
-  if (cards.length === 0) return <Drop />
+const Stack = ({ id, cards, onDrop }: StackProps) => {
+  if (cards.length === 0) return <Drop stackId={id} />
   const [card, ...rest] = cards
 
-  console.log('Stack:onDrop', onDrop)
-
   return (
-    <Drag onDrop={onDrop(card.id)}>
+    <Drag cardId={card.id} onDrop={onDrop}>
       <Box color={card.color} />
-      <Stack cards={rest} onDrop={onDrop} />
+      <Stack id={id} cards={rest} onDrop={onDrop} />
     </Drag>
   )
 }
@@ -197,9 +205,38 @@ const oneOf = (array: Array<any>) =>
 
 const friends = ['bro', 'pal', 'mate', 'fella', 'buddy', 'dude']
 
+const split = function<T>(predicate: (element: T) => boolean, array: Array<T>) {
+  const index = array.findIndex(predicate, array)
+  if (index === -1) {
+    throw new Error(`Not present in ${array}`)
+  }
+  return [array.slice(0, index), array.slice(index)]
+}
+
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
-    case 'sth':
+    case 'drop':
+      let replaceId: any = -1
+      let replace: any = undefined
+      let moveId = state.stacks.findIndex(stack => stack.id === action.stackId)
+      let move: any = undefined
+
+      state.stacks.forEach((stack, id) => {
+        if (stack.cards.findIndex(card => card.id === action.cardId) !== -1) {
+          const [stays, moves] = split(
+            card => card.id === action.cardId,
+            stack.cards
+          )
+
+          move = moves
+          replace = stays
+          replaceId = id
+        }
+      })
+
+      state.stacks[replaceId].cards = replace
+      state.stacks[moveId].cards = [...state.stacks[moveId].cards, ...move]
+
       return { ...state }
     default:
       throw new Error(`Unrecognized action type, ${oneOf(friends)}`)
@@ -215,16 +252,18 @@ const makeCard = (color: string) => {
 }
 
 const initial: State = {
-  stacks: [[...colors].map(makeCard), [...colors].map(makeCard)],
+  stacks: [
+    { id: '1', cards: [...colors].map(makeCard) },
+    { id: '2', cards: [...colors].map(makeCard) },
+  ],
 }
 
 export default () => {
   const droppables: any = defaultContext
   const [state, dispatch] = useReducer(reducer, { ...initial })
 
-  const handleDrop = (id: ID) => () => {
-    console.log(id, '!!')
-  }
+  const handleDrop = (stackId: ID, cardId: ID) =>
+    dispatch({ type: 'drop', stackId, cardId })
 
   return (
     <div className={styles.app}>
@@ -232,7 +271,7 @@ export default () => {
         {state.stacks.map((stack, index) => (
           <div key={index} className={styles.stack} tabIndex={-1}>
             <Slot />
-            <Stack cards={stack} onDrop={handleDrop} />
+            <Stack id={stack.id} cards={stack.cards} onDrop={handleDrop} />
           </div>
         ))}
       </DragContext.Provider>
