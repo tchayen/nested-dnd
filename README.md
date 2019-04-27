@@ -12,6 +12,9 @@ a library-like thing.
 
 ---
 
+Check out a [video](https://twitter.com/tczajecki/status/1122261807249412097) on
+my Twitter.
+
 <p align="center"><img src="screenshot.png"></p>
 
 ## Features
@@ -30,6 +33,16 @@ a library-like thing.
 - Stack is a recursive component.
 - Drop zones are registered and passed using context API.
 - Changing parent stack uses waaaay too much logic bound to this example.
+
+## TODO
+
+Putting it here so I won't forget.
+
+- [ ] get rid of example-specific magic numbers from `<Drag />`.
+- [ ] extract some top level API components from `<App />`.
+- [ ] maybe use indexes instead of made up IDs that are mostly indexes anyway.
+- [ ] rethink naming of things in a way that keeps the cards analogy but isn't
+      specific to it when not necessary.
 
 ## Installation
 

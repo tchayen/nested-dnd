@@ -21,8 +21,8 @@ const Drag = ({ children, cardId, onDrop }: Props) => {
 
   useEffect(() => {
     let pressed = false
-    let pressPoint = { x: 0, y: -145 }
-    let position = { x: 0, y: -145 }
+    let pressPoint = { x: 0, y: -145 } // TODO: 145 is not generic
+    let position = { x: 0, y: -145 } // TODO: make it generic
 
     const callbacks = [
       {
@@ -47,22 +47,23 @@ const Drag = ({ children, cardId, onDrop }: Props) => {
 
           const animateBack = () => {
             // @ts-ignore
-            ref.current!.animate(...animate(position, { x: 0, y: -145 }))
+            ref.current!.animate(...animate(position, { x: 0, y: -145 })) // TODO: make it generic
             ref.current!.style.cursor = 'grab'
-            ref.current!.style.transform = translate({ x: 0, y: -145 })
-            pressPoint = { x: 0, y: -145 }
-            position = { x: 0, y: -145 }
+            ref.current!.style.transform = translate({ x: 0, y: -145 }) // TODO: make it generic
+            pressPoint = { x: 0, y: -145 } // TODO: make it generic
+            position = { x: 0, y: -145 } // TODO: make it generic
           }
 
           if (isInside) {
             const end = {
               x: position.x + isInside.left - left,
-              y: position.y + isInside.top - top + 32.8,
+              y: position.y + isInside.top - top + 32.8, // TODO: 32.8 is not generic too (145 + 32.8 = 177.8)
             }
 
             // Hacky way to check if the drop target is the same stack it was
             // in or not.
-            if (!(end.x === 0 && end.y < 0 && end.y > -178.8)) {
+            if (!(end.x === 0 && end.y < 0 && end.y > -177.8)) {
+              // TODO: make it generic
               ref.current!.animate(
                 // @ts-ignore
                 ...animate(position, end, { fill: 'forwards' })
@@ -82,7 +83,7 @@ const Drag = ({ children, cardId, onDrop }: Props) => {
           if (!pressed) return
           position = {
             x: event.pageX - pressPoint.x,
-            y: event.pageY - pressPoint.y - 145,
+            y: event.pageY - pressPoint.y - 145, // TODO: make it generic
           }
           ref.current!.style.transform = translate(position)
         },
@@ -103,7 +104,7 @@ const Drag = ({ children, cardId, onDrop }: Props) => {
 
   return (
     <div
-      style={{ cursor: 'grab', transform: 'translate(0, -145px)' }}
+      style={{ cursor: 'grab', transform: 'translate(0, -145px)' }} // TODO: make it generic
       ref={ref}
     >
       {children}
