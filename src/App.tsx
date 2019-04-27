@@ -75,11 +75,12 @@ const indexToColor = (i: number) => {
   return `rgb(${value / 2}, 0, ${value})`
 }
 
-const animate = (from: Point, to: Point) => [
+const animate = (from: Point, to: Point, options: any) => [
   [{ transform: translate(from) }, { transform: translate(to) }],
   {
     duration: ANIMATION_TIME,
     easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
+    ...options,
   },
 ]
 
@@ -118,25 +119,19 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
 
           const isInside = inside({ x: event.pageX, y: event.pageY }, draggable)
           if (isInside) {
-            onDrop(isInside.stackId, cardId)
-            // console.log({ x: isInside.left, y: isInside.top })
-            // ref.current!.animate(
-            //   // @ts-ignore
-            //   ...animate(position, {
-            //     x: isInside.left,
-            //     y: isInside.top - 100 + 32.8,
-            //   })
-            // )
-            // TODO:
-            // animate cards moving there
-            // TODO2:
-            // If cursor is moved outside of the screen, the stack sometimes stops
-            // TODO3:
-            // animate cards moving one by one
-            // setTimeout(
-            //   () => onDrop(isInside.stackId, cardId),
-            //   2 * ANIMATION_TIME
-            // )
+            const { left, top } = ref.current!.getBoundingClientRect()
+
+            const end = {
+              x: position.x + isInside.left - left,
+              y: position.y + isInside.top - top + 32.8,
+            }
+
+            ref.current!.animate(
+              // @ts-ignore
+              ...animate(position, end, { fill: 'forwards' })
+            )
+
+            setTimeout(() => onDrop(isInside.stackId, cardId), ANIMATION_TIME)
           } else {
             // @ts-ignore
             ref.current!.animate(...animate(position, { x: 0, y: -145 }))
@@ -200,8 +195,6 @@ const Drop = ({ stackId }: DropProps) => {
   useEffect(() => {
     const { left, top, width, height } = ref.current!.getBoundingClientRect()
     draggable.push({ stackId, left, top, width, height })
-
-    // TODO: they are not removed on unmount
   })
 
   return <div className={styles.drop} ref={ref} />
@@ -280,8 +273,13 @@ const makeCard = (color: string) => {
 
 const initial: State = {
   stacks: [
-    { id: '1', cards: [...colors].map(makeCard) },
-    { id: '2', cards: [...colors].map(makeCard) },
+    { id: '1', cards: [...colors.slice(0, 1)].map(makeCard) },
+    { id: '2', cards: [...colors.slice(0, 2)].map(makeCard) },
+    { id: '3', cards: [...colors.slice(0, 3)].map(makeCard) },
+    { id: '4', cards: [...colors.slice(0, 4)].map(makeCard) },
+    { id: '5', cards: [...colors.slice(0, 5)].map(makeCard) },
+    { id: '6', cards: [...colors.slice(0, 6)].map(makeCard) },
+    { id: '7', cards: [...colors.slice(0, 7)].map(makeCard) },
   ],
 }
 

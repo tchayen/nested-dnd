@@ -28,7 +28,7 @@ div:focus {
 }
 
 .slot {
-  background-color: rgba(0, 0, 0, 0.3);
+  /* background-color: rgba(0, 0, 0, 0.3); */
   left: 0px;
   top: 0px;
   width: 114.3px;
