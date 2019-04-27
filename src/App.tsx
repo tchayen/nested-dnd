@@ -135,7 +135,7 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
 
             // Hacky way to check if the drop target is the same stack it was
             // in or not.
-            if (end.x !== 0) {
+            if (!(end.x === 0 && end.y < 0 && end.y > -178.8)) {
               ref.current!.animate(
                 // @ts-ignore
                 ...animate(position, end, { fill: 'forwards' })
