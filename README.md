@@ -8,7 +8,7 @@ animated drop and cancel.
 ### :construction: **WORK IN PROGRESS** :construction:
 
 At the moment this serves more as a proof of concept (or example) rather than
-a library-like thing
+a library-like thing.
 
 ---
 
