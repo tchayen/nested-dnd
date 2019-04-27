@@ -26,6 +26,7 @@ a library-like thing.
 - The overlaying of the cards relies on CSS transforms.
 - Animations are triggered
   in JS via `element.animate(...)` API.
+- The element currently being dragged always stays on top with use of `:focus`.
 - Stack is a recursive component.
 - Drop zones are registered and passed using context API.
 - Changing parent stack uses waaaay too much logic bound to this example.

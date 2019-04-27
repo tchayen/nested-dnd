@@ -1,36 +1,9 @@
-import React, {
-  useRef,
-  useReducer,
-  useEffect,
-  MouseEvent,
-  ReactNode,
-  createContext,
-  useContext,
-} from 'react'
-import styles from './App.module.css'
-
-const ANIMATION_TIME = 250
-
-type ID = string
-
-type Point = {
-  x: number
-  y: number
-}
-
-type Dimensions = {
-  left: number
-  top: number
-  width: number
-  height: number
-}
-
-type DropCallback = (stackId: ID, cardId: ID) => void
-
-type Card = {
-  id: string
-  color: string
-}
+import React, { useReducer } from 'react'
+import { ID, Card, Dimensions } from './types'
+import styles from './styles.module.css'
+import Stack from './Stack'
+import { split, oneOf, friends } from './utils'
+import DragContext, { defaultContext } from './DragContext'
 
 type CardStack = {
   id: ID
@@ -51,20 +24,6 @@ const Box = ({ color }: BoxProps) => (
   <div className={styles.box} style={{ backgroundColor: color }} />
 )
 
-const translate = (p: Point) => `translate(${p.x}px, ${p.y}px)`
-
-const inside = (p: Point, d: Dimensions) =>
-  p.x >= d.left &&
-  p.x <= d.left + d.width &&
-  p.y >= d.top &&
-  p.y <= d.top + d.height
-
-const insideOneOf = (p: Point, array: Array<{ stackId: ID } & Dimensions>) => {
-  for (let i = 0; i < array.length; i++) {
-    if (inside(p, array[i])) return array[i]
-  }
-}
-
 const length = 7
 const maxRgb = 255
 
@@ -83,171 +42,7 @@ const indexToBlue = (i: number) => {
   return `rgb(0, ${value / 2}, ${value})`
 }
 
-const animate = (from: Point, to: Point, options: any) => [
-  [{ transform: translate(from) }, { transform: translate(to) }],
-  {
-    duration: ANIMATION_TIME,
-    easing: 'cubic-bezier(0.2, 1, 0.1, 1)',
-    ...options,
-  },
-]
-
-type DragProps = {
-  cardId: ID
-  children: ReactNode
-  onDrop: DropCallback
-}
-
-const Drag = ({ children, cardId, onDrop }: DragProps) => {
-  const draggable = useContext(DragContext)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    let pressed = false
-    let pressPoint = { x: 0, y: -145 }
-    let position = { x: 0, y: -145 }
-
-    const callbacks = [
-      {
-        key: 'mousedown',
-        fn: (event: MouseEvent<HTMLElement>) => {
-          if ((event.target as HTMLElement).parentNode !== ref.current) {
-            return
-          }
-          pressed = true
-          ref.current!.style.cursor = 'grabbing'
-          pressPoint = { x: event.pageX, y: event.pageY }
-        },
-      },
-      {
-        key: 'mouseup',
-        fn: (event: MouseEvent<HTMLElement>) => {
-          if (!pressed) return
-          pressed = false
-          const dropPoint = { x: event.pageX, y: event.pageY }
-          const { left, top } = ref.current!.getBoundingClientRect()
-          const isInside = insideOneOf(dropPoint, draggable)
-
-          const animateBack = () => {
-            // @ts-ignore
-            ref.current!.animate(...animate(position, { x: 0, y: -145 }))
-            ref.current!.style.cursor = 'grab'
-            ref.current!.style.transform = translate({ x: 0, y: -145 })
-            pressPoint = { x: 0, y: -145 }
-            position = { x: 0, y: -145 }
-          }
-
-          if (isInside) {
-            const end = {
-              x: position.x + isInside.left - left,
-              y: position.y + isInside.top - top + 32.8,
-            }
-
-            // Hacky way to check if the drop target is the same stack it was
-            // in or not.
-            if (!(end.x === 0 && end.y < 0 && end.y > -178.8)) {
-              ref.current!.animate(
-                // @ts-ignore
-                ...animate(position, end, { fill: 'forwards' })
-              )
-              setTimeout(() => onDrop(isInside.stackId, cardId), ANIMATION_TIME)
-            } else {
-              animateBack()
-            }
-          } else {
-            animateBack()
-          }
-        },
-      },
-      {
-        key: 'mousemove',
-        fn: (event: MouseEvent<HTMLElement>) => {
-          if (!pressed) return
-          position = {
-            x: event.pageX - pressPoint.x,
-            y: event.pageY - pressPoint.y - 145,
-          }
-          ref.current!.style.transform = translate(position)
-        },
-      },
-    ]
-
-    callbacks.forEach(callback => {
-      // @ts-ignore
-      window.addEventListener(callback.key, callback.fn)
-    })
-    return () => {
-      callbacks.forEach(callback => {
-        // @ts-ignore
-        window.removeEventListener(callback.key, callback.fn)
-      })
-    }
-  }, [draggable, cardId, onDrop])
-
-  return (
-    <div
-      style={{ cursor: 'grab', transform: 'translate(0, -145px)' }}
-      ref={ref}
-    >
-      {children}
-    </div>
-  )
-}
-
-const defaultContext: any = []
-
-const DragContext = createContext<Array<{ stackId: ID } & Dimensions>>(
-  defaultContext
-)
-
-type DropProps = {
-  stackId: ID
-}
-
-const Drop = ({ stackId }: DropProps) => {
-  const draggable = useContext(DragContext)
-  const ref = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const { left, top, width, height } = ref.current!.getBoundingClientRect()
-    draggable.push({ stackId, left, top, width, height })
-  })
-
-  return <div className={styles.drop} ref={ref} />
-}
-
 const Slot = () => <div className={styles.slot} />
-
-type StackProps = {
-  id: ID
-  cards: Array<Card>
-  onDrop: DropCallback
-}
-
-const Stack = ({ id, cards, onDrop }: StackProps) => {
-  if (cards.length === 0) return <Drop stackId={id} />
-  const [card, ...rest] = cards
-
-  return (
-    <Drag cardId={card.id} onDrop={onDrop}>
-      <Box color={card.color} />
-      <Stack id={id} cards={rest} onDrop={onDrop} />
-    </Drag>
-  )
-}
-
-const oneOf = (array: Array<any>) =>
-  array[Math.round(Math.random() * (array.length - 1))]
-
-const friends = ['bro', 'pal', 'mate', 'fella', 'buddy', 'dude']
-
-const split = function<T>(predicate: (element: T) => boolean, array: Array<T>) {
-  const index = array.findIndex(predicate, array)
-  if (index === -1) {
-    throw new Error(`Not present in ${array}`)
-  }
-  return [array.slice(0, index), array.slice(index)]
-}
 
 const reducer = (state: State, action: Action) => {
   switch (action.type) {
@@ -323,7 +118,12 @@ export default () => {
         {state.stacks.map((stack, index) => (
           <div key={index} className={styles.stack} tabIndex={-1}>
             <Slot />
-            <Stack id={stack.id} cards={stack.cards} onDrop={handleDrop} />
+            <Stack
+              id={stack.id}
+              cards={stack.cards}
+              onDrop={handleDrop}
+              render={(card: Card) => <Box color={card.color} />}
+            />
           </div>
         ))}
       </DragContext.Provider>
