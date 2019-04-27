@@ -118,11 +118,21 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
           const { left, top } = ref.current!.getBoundingClientRect()
           const isInside = insideOneOf(dropPoint, draggable)
 
+          const animateBack = () => {
+            // @ts-ignore
+            ref.current!.animate(...animate(position, { x: 0, y: -145 }))
+            ref.current!.style.cursor = 'grab'
+            ref.current!.style.transform = translate({ x: 0, y: -145 })
+            pressPoint = { x: 0, y: -145 }
+            position = { x: 0, y: -145 }
+          }
+
           if (isInside) {
             const end = {
               x: position.x + isInside.left - left,
               y: position.y + isInside.top - top + 32.8,
             }
+
             // Hacky way to check if the drop target is the same stack it was
             // in or not.
             if (end.x !== 0) {
@@ -132,14 +142,10 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
               )
               setTimeout(() => onDrop(isInside.stackId, cardId), ANIMATION_TIME)
             } else {
-              // @ts-ignore
-              ref.current!.animate(...animate(position, { x: 0, y: -145 }))
-
-              ref.current!.style.cursor = 'grab'
-              ref.current!.style.transform = translate({ x: 0, y: -145 })
-              pressPoint = { x: 0, y: -145 }
-              position = { x: 0, y: -145 }
+              animateBack()
             }
+          } else {
+            animateBack()
           }
         },
       },
