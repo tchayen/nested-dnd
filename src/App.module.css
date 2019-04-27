@@ -33,13 +33,11 @@ div:focus {
 }
 
 .slot {
-  background-color: rgba(0, 0, 0, 0.3);
+  /* background-color: rgba(0, 0, 0, 0.3); */
   left: 0px;
   top: 0px;
   width: 114.3px;
   height: 177.8px;
   cursor: default;
   border-radius: 8px;
-  /* transform: translateY(32.8px); */
-  /* INTRODUCES A BUG SINCE THE BOX PRE-TRANSLATION IS TAKEN FOR DROPS */
 }

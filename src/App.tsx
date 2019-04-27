@@ -68,9 +68,19 @@ const insideOneOf = (p: Point, array: Array<{ stackId: ID } & Dimensions>) => {
 const length = 7
 const maxRgb = 255
 
-const indexToColor = (i: number) => {
-  const value = (maxRgb / length) * i
-  return `rgb(${value}, ${value}, ${value})`
+const indexToPink = (i: number) => {
+  const value = (maxRgb / length) * (i + 3) * 2
+  return `rgb(${value / 2}, 0, ${value})`
+}
+
+const indexToOrange = (i: number) => {
+  const value = (maxRgb / length) * (i + 3) * 2
+  return `rgb(${value}, ${value / 2}, 0)`
+}
+
+const indexToBlue = (i: number) => {
+  const value = (maxRgb / length) * (i + 3) * 2
+  return `rgb(0, ${value / 2}, ${value})`
 }
 
 const animate = (from: Point, to: Point, options: any) => [
@@ -269,7 +279,7 @@ const reducer = (state: State, action: Action) => {
   }
 }
 
-const colors = [...Array(length)].map((_, index) => index).map(indexToColor)
+const colors = [...Array(length)].map((_, index) => index)
 
 let id = 0
 const makeCard = (color: string) => {
@@ -279,13 +289,18 @@ const makeCard = (color: string) => {
 
 const initial: State = {
   stacks: [
-    { id: '1', cards: [...colors.slice(0, 1)].map(makeCard) },
-    { id: '2', cards: [...colors.slice(0, 2)].map(makeCard) },
-    { id: '3', cards: [...colors.slice(0, 3)].map(makeCard) },
-    { id: '4', cards: [...colors.slice(0, 4)].map(makeCard) },
-    { id: '5', cards: [...colors.slice(0, 5)].map(makeCard) },
-    { id: '6', cards: [...colors.slice(0, 6)].map(makeCard) },
-    { id: '7', cards: [...colors.slice(0, 7)].map(makeCard) },
+    {
+      id: '1',
+      cards: [...colors.map(indexToPink).slice(0, 5)].map(makeCard),
+    },
+    {
+      id: '2',
+      cards: [...colors.map(indexToOrange).slice(0, 4)].map(makeCard),
+    },
+    {
+      id: '3',
+      cards: [...colors.map(indexToBlue).slice(0, 3)].map(makeCard),
+    },
   ],
 }
 
