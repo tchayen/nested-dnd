@@ -53,17 +53,15 @@ const Box = ({ color }: BoxProps) => (
 
 const translate = (p: Point) => `translate(${p.x}px, ${p.y}px)`
 
-const inside = (p: Point, array: Array<{ stackId: ID } & Dimensions>) => {
+const inside = (p: Point, d: Dimensions) =>
+  p.x >= d.left &&
+  p.x <= d.left + d.width &&
+  p.y >= d.top &&
+  p.y <= d.top + d.height
+
+const insideOneOf = (p: Point, array: Array<{ stackId: ID } & Dimensions>) => {
   for (let i = 0; i < array.length; i++) {
-    const d = array[i]
-    if (
-      p.x >= d.left &&
-      p.x <= d.left + d.width &&
-      p.y >= d.top &&
-      p.y <= d.top + d.height
-    ) {
-      return d
-    }
+    if (inside(p, array[i])) return array[i]
   }
 }
 
@@ -72,7 +70,7 @@ const maxRgb = 255
 
 const indexToColor = (i: number) => {
   const value = (maxRgb / length) * i
-  return `rgb(${value / 2}, 0, ${value})`
+  return `rgb(${value}, ${value}, ${value})`
 }
 
 const animate = (from: Point, to: Point, options: any) => [
@@ -116,30 +114,32 @@ const Drag = ({ children, cardId, onDrop }: DragProps) => {
         fn: (event: MouseEvent<HTMLElement>) => {
           if (!pressed) return
           pressed = false
+          const dropPoint = { x: event.pageX, y: event.pageY }
+          const { left, top } = ref.current!.getBoundingClientRect()
+          const isInside = insideOneOf(dropPoint, draggable)
 
-          const isInside = inside({ x: event.pageX, y: event.pageY }, draggable)
           if (isInside) {
-            const { left, top } = ref.current!.getBoundingClientRect()
-
             const end = {
               x: position.x + isInside.left - left,
               y: position.y + isInside.top - top + 32.8,
             }
-
-            ref.current!.animate(
+            // Hacky way to check if the drop target is the same stack it was
+            // in or not.
+            if (end.x !== 0) {
+              ref.current!.animate(
+                // @ts-ignore
+                ...animate(position, end, { fill: 'forwards' })
+              )
+              setTimeout(() => onDrop(isInside.stackId, cardId), ANIMATION_TIME)
+            } else {
               // @ts-ignore
-              ...animate(position, end, { fill: 'forwards' })
-            )
+              ref.current!.animate(...animate(position, { x: 0, y: -145 }))
 
-            setTimeout(() => onDrop(isInside.stackId, cardId), ANIMATION_TIME)
-          } else {
-            // @ts-ignore
-            ref.current!.animate(...animate(position, { x: 0, y: -145 }))
-
-            ref.current!.style.cursor = 'grab'
-            ref.current!.style.transform = translate({ x: 0, y: -145 })
-            pressPoint = { x: 0, y: -145 }
-            position = { x: 0, y: -145 }
+              ref.current!.style.cursor = 'grab'
+              ref.current!.style.transform = translate({ x: 0, y: -145 })
+              pressPoint = { x: 0, y: -145 }
+              position = { x: 0, y: -145 }
+            }
           }
         },
       },

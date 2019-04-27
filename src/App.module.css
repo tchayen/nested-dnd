@@ -8,7 +8,7 @@
   width: 114.3px;
   height: 177.8px;
   border-radius: 8px;
-  box-shadow: 0 0 0 1px #000 inset;
+  /* box-shadow: 0 0 0 1px #000 inset; */
 }
 
 .drop {
@@ -28,7 +28,7 @@ div:focus {
 }
 
 .slot {
-  /* background-color: rgba(0, 0, 0, 0.3); */
+  background-color: rgba(0, 0, 0, 0.3);
   left: 0px;
   top: 0px;
   width: 114.3px;
