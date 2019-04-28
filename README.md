@@ -38,7 +38,8 @@ my Twitter.
 
 Putting it here so I won't forget.
 
-- [ ] get rid of example-specific magic numbers from `<Drag />`.
+- [x] get rid of example-specific magic numbers from `<Drag />`.
+- [ ] fix bug with dropping outside of `<Drop />` sometimes being possible.
 - [ ] extract some top level API components from `<App />`.
 - [ ] maybe use indexes instead of made up IDs that are mostly indexes anyway.
 - [ ] rethink naming of things in a way that keeps the cards analogy but isn't

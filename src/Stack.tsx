@@ -8,16 +8,36 @@ type Props = {
   cards: Array<Card>
   onDrop: DropCallback
   render: (card: Card) => ReactNode
+  verticalOffset: number
+  elementHeight: number
 }
 
-const Stack = ({ id, cards, onDrop, render }: Props) => {
+const Stack = ({
+  id,
+  cards,
+  onDrop,
+  render,
+  elementHeight,
+  verticalOffset,
+}: Props) => {
   if (cards.length === 0) return <Drop stackId={id} />
   const [card, ...rest] = cards
-
   return (
-    <Drag cardId={card.id} onDrop={onDrop}>
+    <Drag
+      cardId={card.id}
+      onDrop={onDrop}
+      elementHeight={elementHeight}
+      verticalOffset={verticalOffset}
+    >
       {render(card)}
-      <Stack id={id} cards={rest} onDrop={onDrop} render={render} />
+      <Stack
+        id={id}
+        cards={rest}
+        onDrop={onDrop}
+        render={render}
+        elementHeight={elementHeight}
+        verticalOffset={verticalOffset}
+      />
     </Drag>
   )
 }

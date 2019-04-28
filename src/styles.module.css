@@ -6,16 +6,16 @@
 }
 
 .box {
-  width: 114.3px;
-  height: 177.8px;
+  width: 114px;
+  height: 178px;
   border-radius: 8px;
   /* box-shadow: 0 0 0 1px #000 inset; */
 }
 
 .drop {
-  width: 114.3px;
-  height: 177.8px;
-  margin-top: -177.8px;
+  width: 114px;
+  height: 178px;
+  margin-top: -178px;
   border-radius: 8px;
 }
 
@@ -36,8 +36,8 @@ div:focus {
   /* background-color: rgba(0, 0, 0, 0.3); */
   left: 0px;
   top: 0px;
-  width: 114.3px;
-  height: 177.8px;
+  width: 114px;
+  height: 178px;
   cursor: default;
   border-radius: 8px;
 }

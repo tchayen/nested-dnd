@@ -123,6 +123,8 @@ export default () => {
               cards={stack.cards}
               onDrop={handleDrop}
               render={(card: Card) => <Box color={card.color} />}
+              elementHeight={178}
+              verticalOffset={33}
             />
           </div>
         ))}
